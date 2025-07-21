@@ -24,7 +24,8 @@
         "EXTTRAIL b3",
         "SETENV (TZ=\"US/Central\")",
         "Table SYSADM.PS_ACAD_PLAN;",
-        "Table SYSADM.PS_ACAD_PROG_TBL;"
+        "Table SYSADM.PS_ACAD_PROG_TBL;",
+        "Table SYSADM.PSPS_PHONE;"
       ],
       "description": "CDC cs",
       "source": "tranlogs",
