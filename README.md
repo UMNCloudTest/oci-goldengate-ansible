@@ -1,6 +1,8 @@
 # GoldenGate Deployment Project
 
+
 This project provides Ansible playbooks for deploying and managing Oracle GoldenGate Extract, Distribution Path, and Replicat configurations using JSON-based configuration files with Jinja2 templating.
+
 
 ## Project Structure
 
