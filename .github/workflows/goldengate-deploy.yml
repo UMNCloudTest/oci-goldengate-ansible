@@ -32,7 +32,6 @@ jobs:
   deploy-dev:
     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
     runs-on: ubuntu-latest
-    environment: development
     env:
       GOLDENGATE_URL: ${{ secrets.DEV_GOLDENGATE_URL }}
       GOLDENGATE_USERNAME: ${{ secrets.DEV_GOLDENGATE_USERNAME }}
@@ -95,7 +94,6 @@ jobs:
   deploy-uat:
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'uat')
     runs-on: ubuntu-latest
-    environment: uat
     env:
       GOLDENGATE_URL: ${{ secrets.UAT_GOLDENGATE_URL }}
       GOLDENGATE_USERNAME: ${{ secrets.UAT_GOLDENGATE_USERNAME }}
@@ -158,7 +156,6 @@ jobs:
   deploy-prod:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
     runs-on: ubuntu-latest
-    environment: production
     env:
       GOLDENGATE_URL: ${{ secrets.PROD_GOLDENGATE_URL }}
       GOLDENGATE_USERNAME: ${{ secrets.PROD_GOLDENGATE_USERNAME }}
@@ -201,54 +198,3 @@ jobs:
         echo "🏗️ Building bronze tables for production..."
         ./build_bronze_tables.sh --environment prod --wait --timeout 3600
 
-    - name: Production Pre-deployment Validation
-      working-directory: project
-      run: |
-        echo "=== Production Deployment Validation ==="
-        echo "Environment: $TARGET_ENV"
-        echo "GoldenGate URL: $GOLDENGATE_URL"
-        echo "Action: ${{ github.event.inputs.action || 'deploy' }}"
-        echo "========================================="
-        
-        # Validate configuration files
-        python -c "
-import json
-import sys
-try:
-    with open('config/extracts.json') as f:
-        extracts = json.load(f)
-    with open('config/distpaths.json') as f:
-        distpaths = json.load(f)
-    with open('config/replicats.json') as f:
-        replicats = json.load(f)
-    print(f'Configuration validation passed:')
-    print(f'  - Extracts: {len(extracts[\"extracts\"])}')
-    print(f'  - Distribution Paths: {len(distpaths[\"distpaths\"])}')
-    print(f'  - Replicats: {len(replicats[\"replicats\"])}')
-except Exception as e:
-    print(f'Configuration validation failed: {e}')
-    sys.exit(1)
-        "
-
-    - name: Run Ansible playbook for Production
-      working-directory: project
-      run: |
-        if [ "${{ github.event.inputs.action || 'deploy' }}" = "deploy" ]; then
-          ansible-playbook playbooks/goldengate-deployment.yml \
-            -i inventory/prod.yml \
-            -e "target_environment=prod" \
-            --diff
-        else
-          ansible-playbook playbooks/goldengate-management.yml \
-            -i inventory/prod.yml \
-            -e "target_environment=prod" \
-            -e "action=${{ github.event.inputs.action }}" \
-            --diff
-        fi
-
-    - name: Post-deployment Notification
-      if: success()
-      run: |
-        echo "✅ Production deployment completed successfully"
-        echo "Environment: $TARGET_ENV"
-        echo "Action: ${{ github.event.inputs.action || 'deploy' }}"

@@ -1,54 +1,75 @@
 {
   "extracts": [
     {
-      "name": "{{ extract_name_prefix }}SRC1",
-      "state": "started",
-      "config": {
-        "source": {
-          "type": "oracle",
-          "connection": {
-            "host": "{{ source_db_host }}",
-            "port": "{{ source_db_port | default(1521) }}",
-            "serviceName": "{{ source_db_service }}"
-          }
-        },
-        "targets": [
-          {
-            "file": "./dirdat/{{ trail_file_prefix }}",
-            "format": "trail"
-          }
-        ],
-        "description": "Extract for {{ source_db_service }} database",
-        "credentials": {
-          "alias": "{{ source_db_alias }}"
-        }
+      "schema": "ogg:extract",
+      "credentials": {
+        "alias": "dpt_cs",
+        "domain": "OracleGoldenGate"
       },
-      "trail_file": "{{ trail_file_prefix }}"
+      "begin": "now",
+      "encryptionProfile": "LocalWallet",
+      "managedProcessSettings": "ogg:managedProcessSettings:Default",
+      "targets": [
+        {
+          "name": "b3",
+          "sizeMB": 500,
+          "sequence": 0,
+          "offset": 0,
+          "remote": false
+        }
+      ],
+      "config": [
+        "EXTRACT ILPUM2",
+        "USERIDALIAS dpt_cs DOMAIN OracleGoldenGate",
+        "EXTTRAIL b3",
+        "SETENV (TZ=\"US/Central\")",
+        "Table SYSADM.PS_ACAD_PLAN;",
+        "Table SYSADM.PS_ACAD_PROG_TBL;"
+      ],
+      "description": "CDC cs",
+      "source": "tranlogs",
+      "registration": {
+        "share": true,
+        "optimized": true,
+        "csn": 119288408
+      },
+      "status": "stopped"
     },
     {
-      "name": "{{ extract_name_prefix }}SRC2", 
-      "state": "started",
-      "config": {
-        "source": {
-          "type": "oracle",
-          "connection": {
-            "host": "{{ source_db_host_2 }}",
-            "port": "{{ source_db_port_2 | default(1521) }}",
-            "serviceName": "{{ source_db_service_2 }}"
-          }
-        },
-        "targets": [
-          {
-            "file": "./dirdat/{{ trail_file_prefix_2 }}",
-            "format": "trail"
-          }
-        ],
-        "description": "Extract for {{ source_db_service_2 }} database",
-        "credentials": {
-          "alias": "{{ source_db_alias_2 }}"
-        }
+      "schema": "ogg:extract",
+      "credentials": {
+        "alias": "dpt_cs",
+        "domain": "OracleGoldenGate"
       },
-      "trail_file": "{{ trail_file_prefix_2 }}"
+      "begin": "now",
+      "encryptionProfile": "LocalWallet",
+      "managedProcessSettings": "ogg:managedProcessSettings:Default",
+      "targets": [
+        {
+          "name": "b3",
+          "sizeMB": 500,
+          "sequence": 0,
+          "offset": 0,
+          "remote": false
+        }
+      ],
+      "config": [
+        "EXTRACT CDCPUM2",
+        "USERIDALIAS dpt_cspum DOMAIN OracleGoldenGate",
+        "EXTTRAIL b3",
+        "SETENV (TZ=\"US/Central\")",
+        "Table SYSADM.PS_ACAD_PLAN;",
+        "Table SYSADM.PS_ACAD_PROG_TBL;"
+      ],
+      "description": "CDC",
+      "source": "tranlogs",
+      "registration": {
+        "share": true,
+        "optimized": true,
+        "csn": 119288408
+      },
+      "status": "stopped"
     }
+
   ]
 }
