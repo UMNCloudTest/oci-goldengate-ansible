@@ -25,6 +25,7 @@
         "SETENV (TZ=\"US/Central\")",
         "Table SYSADM.PS_ACAD_PLAN;",
         "Table SYSADM.PS_ACAD_PROG_TBL;",
+        "Table SYSADM.PS_PHONE;",
         "Table SYSADM.PS_PHONE;"
       ],
       "description": "CDC cs",
