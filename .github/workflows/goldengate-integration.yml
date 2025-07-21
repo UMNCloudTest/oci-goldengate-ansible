@@ -2,7 +2,8 @@ name: GoldenGate Integration
 
 on:
    pull_request:
-    branches: [feature/**]
+    branches: 
+    - 'main'
 
 
 jobs:
