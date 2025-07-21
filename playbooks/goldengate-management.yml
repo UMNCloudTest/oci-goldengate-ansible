@@ -1,0 +1,104 @@
+---
+- name: Manage GoldenGate Components (Start/Stop/Status)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../templates/variables.yml.j2
+  vars:
+    # Load JSON configuration files
+    extracts_config: "{{ lookup('file', '../config/extracts.json') | from_json }}"
+    distpaths_config: "{{ lookup('file', '../config/distpaths.json') | from_json }}"
+    replicats_config: "{{ lookup('file', '../config/replicats.json') | from_json }}"
+    
+    # Environment-specific GoldenGate connection (from GitHub environment variables or defaults)
+    goldengate_url: "{{ lookup('env', 'GOLDENGATE_URL') | default(ogg_url) | default('https://ogg-server:9011') }}"
+    goldengate_username: "{{ lookup('env', 'GOLDENGATE_USERNAME') | default(ogg_username) | default('admin') }}"
+    goldengate_password: "{{ lookup('env', 'GOLDENGATE_PASSWORD') | default(ogg_password) | default('password') }}"
+    validate_certs: "{{ ogg_validate_certs | default(true) }}"
+    target_environment: "{{ target_environment | default('dev') }}"
+    
+    # Management action: start, stop, or status
+    management_action: "{{ action | default('status') }}"
+    component_type: "{{ component | default('all') }}"
+    
+  tasks:
+    - name: Display management operation
+      debug:
+        msg:
+          - "Performing {{ management_action }} operation on {{ component_type }}"
+          - "Environment: {{ target_environment }}"
+          - "GoldenGate URL: {{ goldengate_url }}"
+          - "Available components: extracts, distpaths, replicats, all"
+      tags: ['always']
+
+    # Manage Extracts
+    - name: Manage GoldenGate Extracts
+      oracle.goldengate.goldengate_extract:
+        name: "{{ item.name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.name) }}"
+        state: "{{ management_action if management_action in ['started', 'stopped'] else item.state }}"
+        config: "{{ item.config if management_action == 'present' else omit }}"
+        trail_file: "{{ item.trail_file | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.trail_file) }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ extracts_config.extracts }}"
+      loop_control:
+        label: "Extract: {{ item.name }}"
+      register: extract_mgmt_results
+      when: component_type in ['all', 'extracts'] and management_action != 'status'
+      tags: ['extract', 'management']
+
+    # Manage Distribution Paths
+    - name: Manage GoldenGate Distribution Paths
+      oracle.goldengate.goldengate_distpath:
+        source_name: "{{ item.source_name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.source_name) }}"
+        path_name: "{{ item.path_name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.path_name) }}"
+        state: "{{ management_action if management_action in ['started', 'stopped'] else item.state }}"
+        config: "{{ item.config if management_action == 'present' else omit }}"
+        trail_file: "{{ item.trail_file | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.trail_file) }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ distpaths_config.distpaths }}"
+      loop_control:
+        label: "DistPath: {{ item.source_name }}/{{ item.path_name }}"
+      register: distpath_mgmt_results
+      when: component_type in ['all', 'distpaths'] and management_action != 'status'
+      tags: ['distpath', 'management']
+
+    # Manage Replicats
+    - name: Manage GoldenGate Replicats
+      oracle.goldengate.goldengate_replicat:
+        name: "{{ item.name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.name) }}"
+        state: "{{ management_action if management_action in ['started', 'stopped'] else item.state }}"
+        config: "{{ item.config if management_action == 'present' else omit }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ replicats_config.replicats }}"
+      loop_control:
+        label: "Replicat: {{ item.name }}"
+      register: replicat_mgmt_results
+      when: component_type in ['all', 'replicats'] and management_action != 'status'
+      tags: ['replicat', 'management']
+
+    # Status check placeholder (would require additional API calls)
+    - name: Display status check message
+      debug:
+        msg: 
+          - "Status check would query GoldenGate API for current component states"
+          - "This requires implementing status checking logic in the modules"
+      when: management_action == 'status'
+      tags: ['status']
+
+    # Display results
+    - name: Display management operation results
+      debug:
+        msg:
+          - "Management operation '{{ management_action }}' completed on {{ component_type }}"
+          - "Check individual task results above for detailed status"
+      when: management_action != 'status'
+      tags: ['summary']

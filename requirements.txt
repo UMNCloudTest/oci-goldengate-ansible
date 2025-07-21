@@ -1,0 +1,13 @@
+# Ansible and GoldenGate Collection Requirements
+ansible>=2.9.0
+ansible-core>=2.11.0
+
+# Databricks SQL Connector for CDC validation
+databricks-sql-connector>=2.0.0
+
+# Databricks CLI for job execution
+databricks-cli>=0.17.0
+
+# Additional Python dependencies
+jinja2>=2.11.0
+pyyaml>=5.4.0

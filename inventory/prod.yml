@@ -1,0 +1,44 @@
+# Production Environment Inventory
+all:
+  vars:
+    # Environment identifier
+    target_environment: prod
+    
+    # GoldenGate Server Configuration (will be overridden by GitHub environment variables)
+    ogg_url: "https://prod-ogg-server:9011"
+    ogg_username: "admin"
+    ogg_password: "prod-password"
+    ogg_validate_certs: true
+    
+    # Source Database Configuration
+    source_host: "prod-source-db.example.com"
+    source_port: 1521
+    source_service: "PRODORCL"
+    source_alias: "PRODSOURCEDB"
+    
+    source_host_2: "prod-source-db2.example.com"
+    source_port_2: 1521
+    source_service_2: "PRODORCL2"
+    source_alias_2: "PRODSOURCEDB2"
+    
+    # Target GoldenGate Servers
+    target_ogg_server: "prod-remote-ogg.example.com"
+    target_ogg_server_port: 9011
+    
+    target_ogg_server_2: "prod-remote-ogg2.example.com"
+    target_ogg_server_port_2: 9011
+    
+    # Target Database Configuration
+    target_host: "prod-target-db.example.com"
+    target_port: 1521
+    target_service: "PRODTGTDB"
+    target_alias: "PRODTARGETDB"
+    
+    target_host_2: "prod-target-db2.example.com"
+    target_port_2: 1521
+    target_service_2: "PRODTGTDB2"
+    target_alias_2: "PRODTARGETDB2"
+
+  hosts:
+    localhost:
+      ansible_connection: local

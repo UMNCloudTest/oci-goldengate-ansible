@@ -1,0 +1,54 @@
+{
+  "extracts": [
+    {
+      "name": "{{ extract_name_prefix }}SRC1",
+      "state": "started",
+      "config": {
+        "source": {
+          "type": "oracle",
+          "connection": {
+            "host": "{{ source_db_host }}",
+            "port": "{{ source_db_port | default(1521) }}",
+            "serviceName": "{{ source_db_service }}"
+          }
+        },
+        "targets": [
+          {
+            "file": "./dirdat/{{ trail_file_prefix }}",
+            "format": "trail"
+          }
+        ],
+        "description": "Extract for {{ source_db_service }} database",
+        "credentials": {
+          "alias": "{{ source_db_alias }}"
+        }
+      },
+      "trail_file": "{{ trail_file_prefix }}"
+    },
+    {
+      "name": "{{ extract_name_prefix }}SRC2", 
+      "state": "started",
+      "config": {
+        "source": {
+          "type": "oracle",
+          "connection": {
+            "host": "{{ source_db_host_2 }}",
+            "port": "{{ source_db_port_2 | default(1521) }}",
+            "serviceName": "{{ source_db_service_2 }}"
+          }
+        },
+        "targets": [
+          {
+            "file": "./dirdat/{{ trail_file_prefix_2 }}",
+            "format": "trail"
+          }
+        ],
+        "description": "Extract for {{ source_db_service_2 }} database",
+        "credentials": {
+          "alias": "{{ source_db_alias_2 }}"
+        }
+      },
+      "trail_file": "{{ trail_file_prefix_2 }}"
+    }
+  ]
+}

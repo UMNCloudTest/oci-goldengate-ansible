@@ -1,0 +1,48 @@
+{
+  "replicats": [
+    {
+      "name": "{{ replicat_name_prefix }}TGT1",
+      "state": "started", 
+      "config": {
+        "source": {
+          "type": "trail",
+          "trail": "./dirdat/{{ remote_trail_prefix }}"
+        },
+        "target": {
+          "type": "oracle",
+          "connection": {
+            "host": "{{ target_db_host }}",
+            "port": "{{ target_db_port | default(1521) }}",
+            "serviceName": "{{ target_db_service }}"
+          }
+        },
+        "description": "Replicat for {{ target_db_service }} database",
+        "credentials": {
+          "alias": "{{ target_db_alias }}"
+        }
+      }
+    },
+    {
+      "name": "{{ replicat_name_prefix }}TGT2",
+      "state": "started",
+      "config": {
+        "source": {
+          "type": "trail", 
+          "trail": "./dirdat/{{ remote_trail_prefix_2 }}"
+        },
+        "target": {
+          "type": "oracle",
+          "connection": {
+            "host": "{{ target_db_host_2 }}",
+            "port": "{{ target_db_port_2 | default(1521) }}",
+            "serviceName": "{{ target_db_service_2 }}"
+          }
+        },
+        "description": "Replicat for {{ target_db_service_2 }} database",
+        "credentials": {
+          "alias": "{{ target_db_alias_2 }}"
+        }
+      }
+    }
+  ]
+}

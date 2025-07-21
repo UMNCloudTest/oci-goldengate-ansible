@@ -1,0 +1,254 @@
+name: GoldenGate Deployment
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'feature/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - uat
+        - prod
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+        - deploy
+        - start
+        - stop
+        - status
+
+jobs:
+  # Development deployment (auto-deploy on push to develop branch)
+  deploy-dev:
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      GOLDENGATE_URL: ${{ secrets.DEV_GOLDENGATE_URL }}
+      GOLDENGATE_USERNAME: ${{ secrets.DEV_GOLDENGATE_USERNAME }}
+      GOLDENGATE_PASSWORD: ${{ secrets.DEV_GOLDENGATE_PASSWORD }}
+      TARGET_ENV: dev
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      working-directory: project
+      run: |
+        pip install -r requirements.txt
+        ansible-galaxy collection install oracle.goldengate
+
+    - name: CDC Field Exclude Validation
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_SERVER_HOSTNAME: ${{ secrets.DEV_DATABRICKS_HOSTNAME }}
+        DATABRICKS_HTTP_PATH: ${{ secrets.DEV_DATABRICKS_HTTP_PATH }}
+        DATABRICKS_ACCESS_TOKEN: ${{ secrets.DEV_DATABRICKS_TOKEN }}
+      run: |
+        echo "🔍 Running CDC field exclude validation for development..."
+        python validate_cdc_excludes.py --environment dev --config-path ../../config/extracts.json
+
+    - name: Build Bronze Tables
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_HOST: ${{ secrets.DEV_DATABRICKS_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DEV_DATABRICKS_TOKEN }}
+      run: |
+        echo "🏗️ Building bronze tables for development..."
+        ./build_bronze_tables.sh --environment dev --wait --timeout 1800
+
+    - name: Run Ansible playbook for Development
+      working-directory: project
+      run: |
+        if [ "${{ github.event.inputs.action || 'deploy' }}" = "deploy" ]; then
+          ansible-playbook playbooks/goldengate-deployment.yml \
+            -i inventory/dev.yml \
+            -e "target_environment=dev" \
+            --check --diff
+        else
+          ansible-playbook playbooks/goldengate-management.yml \
+            -i inventory/dev.yml \
+            -e "target_environment=dev" \
+            -e "action=${{ github.event.inputs.action }}" \
+            --check --diff
+        fi
+
+  # UAT deployment (auto-deploy on push to main branch)
+  deploy-uat:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'uat')
+    runs-on: ubuntu-latest
+    environment: uat
+    env:
+      GOLDENGATE_URL: ${{ secrets.UAT_GOLDENGATE_URL }}
+      GOLDENGATE_USERNAME: ${{ secrets.UAT_GOLDENGATE_USERNAME }}
+      GOLDENGATE_PASSWORD: ${{ secrets.UAT_GOLDENGATE_PASSWORD }}
+      TARGET_ENV: uat
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      working-directory: project
+      run: |
+        pip install -r requirements.txt
+        ansible-galaxy collection install oracle.goldengate
+
+    - name: CDC Field Exclude Validation
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_SERVER_HOSTNAME: ${{ secrets.UAT_DATABRICKS_HOSTNAME }}
+        DATABRICKS_HTTP_PATH: ${{ secrets.UAT_DATABRICKS_HTTP_PATH }}
+        DATABRICKS_ACCESS_TOKEN: ${{ secrets.UAT_DATABRICKS_TOKEN }}
+      run: |
+        echo "🔍 Running CDC field exclude validation for UAT..."
+        python validate_cdc_excludes.py --environment uat --config-path ../../config/extracts.json
+
+    - name: Build Bronze Tables
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_HOST: ${{ secrets.UAT_DATABRICKS_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.UAT_DATABRICKS_TOKEN }}
+      run: |
+        echo "🏗️ Building bronze tables for UAT..."
+        ./build_bronze_tables.sh --environment uat --wait --timeout 1800
+
+    - name: Run Ansible playbook for UAT
+      working-directory: project
+      run: |
+        if [ "${{ github.event.inputs.action || 'deploy' }}" = "deploy" ]; then
+          ansible-playbook playbooks/goldengate-deployment.yml \
+            -i inventory/uat.yml \
+            -e "target_environment=uat" \
+            --check --diff
+        else
+          ansible-playbook playbooks/goldengate-management.yml \
+            -i inventory/uat.yml \
+            -e "target_environment=uat" \
+            -e "action=${{ github.event.inputs.action }}" \
+            --check --diff
+        fi
+
+  # Production deployment (manual approval required)
+  deploy-prod:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      GOLDENGATE_URL: ${{ secrets.PROD_GOLDENGATE_URL }}
+      GOLDENGATE_USERNAME: ${{ secrets.PROD_GOLDENGATE_USERNAME }}
+      GOLDENGATE_PASSWORD: ${{ secrets.PROD_GOLDENGATE_PASSWORD }}
+      TARGET_ENV: prod
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      working-directory: project
+      run: |
+        pip install -r requirements.txt
+        ansible-galaxy collection install oracle.goldengate
+
+    - name: CDC Field Exclude Validation
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_SERVER_HOSTNAME: ${{ secrets.PROD_DATABRICKS_HOSTNAME }}
+        DATABRICKS_HTTP_PATH: ${{ secrets.PROD_DATABRICKS_HTTP_PATH }}
+        DATABRICKS_ACCESS_TOKEN: ${{ secrets.PROD_DATABRICKS_TOKEN }}
+      run: |
+        echo "🔍 Running CDC field exclude validation for production..."
+        python validate_cdc_excludes.py --environment prod --config-path ../../config/extracts.json
+
+    - name: Build Bronze Tables
+      if: github.event.inputs.action == 'deploy' || github.event.inputs.action == '' || github.event.inputs.action == null
+      working-directory: project/playbooks/scripts
+      env:
+        DATABRICKS_HOST: ${{ secrets.PROD_DATABRICKS_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.PROD_DATABRICKS_TOKEN }}
+      run: |
+        echo "🏗️ Building bronze tables for production..."
+        ./build_bronze_tables.sh --environment prod --wait --timeout 3600
+
+    - name: Production Pre-deployment Validation
+      working-directory: project
+      run: |
+        echo "=== Production Deployment Validation ==="
+        echo "Environment: $TARGET_ENV"
+        echo "GoldenGate URL: $GOLDENGATE_URL"
+        echo "Action: ${{ github.event.inputs.action || 'deploy' }}"
+        echo "========================================="
+        
+        # Validate configuration files
+        python -c "
+import json
+import sys
+try:
+    with open('config/extracts.json') as f:
+        extracts = json.load(f)
+    with open('config/distpaths.json') as f:
+        distpaths = json.load(f)
+    with open('config/replicats.json') as f:
+        replicats = json.load(f)
+    print(f'Configuration validation passed:')
+    print(f'  - Extracts: {len(extracts[\"extracts\"])}')
+    print(f'  - Distribution Paths: {len(distpaths[\"distpaths\"])}')
+    print(f'  - Replicats: {len(replicats[\"replicats\"])}')
+except Exception as e:
+    print(f'Configuration validation failed: {e}')
+    sys.exit(1)
+        "
+
+    - name: Run Ansible playbook for Production
+      working-directory: project
+      run: |
+        if [ "${{ github.event.inputs.action || 'deploy' }}" = "deploy" ]; then
+          ansible-playbook playbooks/goldengate-deployment.yml \
+            -i inventory/prod.yml \
+            -e "target_environment=prod" \
+            --diff
+        else
+          ansible-playbook playbooks/goldengate-management.yml \
+            -i inventory/prod.yml \
+            -e "target_environment=prod" \
+            -e "action=${{ github.event.inputs.action }}" \
+            --diff
+        fi
+
+    - name: Post-deployment Notification
+      if: success()
+      run: |
+        echo "✅ Production deployment completed successfully"
+        echo "Environment: $TARGET_ENV"
+        echo "Action: ${{ github.event.inputs.action || 'deploy' }}"

@@ -1,0 +1,22 @@
+name: GoldenGate Integration
+
+on:
+   pull_request:
+    branches: [main]
+    paths:
+      - 'feature/**'
+
+jobs:
+  # Development deployment (auto-deploy on push to develop branch)
+  deploy-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check Extract Columns
+      run: |
+        echo "Checking Extract Columns..."
+        echo "Table PS_PERSON is not allowed to extract column PHONE_NUMBER"
+        exit 1

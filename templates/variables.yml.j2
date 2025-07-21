@@ -1,0 +1,48 @@
+# GoldenGate Configuration Variables
+# This file contains templated variables for dynamic trail file names and other configuration
+
+# Extract Configuration
+extract_name_prefix: "EXT"
+trail_file_prefix: "et"
+trail_file_prefix_2: "es"
+
+# Source Database Configuration
+source_db_host: "{{ source_host | default('source-db.example.com') }}"
+source_db_port: "{{ source_port | default(1521) }}"
+source_db_service: "{{ source_service | default('ORCL') }}"
+source_db_alias: "{{ source_alias | default('SOURCEDB') }}"
+
+source_db_host_2: "{{ source_host_2 | default('source-db2.example.com') }}"
+source_db_port_2: "{{ source_port_2 | default(1521) }}"
+source_db_service_2: "{{ source_service_2 | default('ORCL2') }}"
+source_db_alias_2: "{{ source_alias_2 | default('SOURCEDB2') }}"
+
+# Distribution Path Configuration
+distpath_name_prefix: "DP"
+remote_trail_prefix: "rt"
+remote_trail_prefix_2: "rs"
+
+target_ogg_host: "{{ target_ogg_server | default('remote-ogg.example.com') }}"
+target_ogg_port: "{{ target_ogg_server_port | default(9021) }}"
+
+target_ogg_host_2: "{{ target_ogg_server_2 | default('remote-ogg2.example.com') }}"
+target_ogg_port_2: "{{ target_ogg_server_port_2 | default(9021) }}"
+
+# Replicat Configuration  
+replicat_name_prefix: "REP"
+
+target_db_host: "{{ target_host | default('target-db.example.com') }}"
+target_db_port: "{{ target_port | default(1521) }}"
+target_db_service: "{{ target_service | default('TGTDB') }}"
+target_db_alias: "{{ target_alias | default('TARGETDB') }}"
+
+target_db_host_2: "{{ target_host_2 | default('target-db2.example.com') }}"
+target_db_port_2: "{{ target_port_2 | default(1521) }}"
+target_db_service_2: "{{ target_service_2 | default('TGTDB2') }}"
+target_db_alias_2: "{{ target_alias_2 | default('TARGETDB2') }}"
+
+# GoldenGate Connection Configuration
+goldengate_url: "{{ ogg_url | default('https://ogg-server:9011') }}"
+goldengate_username: "{{ ogg_username | default('admin') }}"
+goldengate_password: "{{ ogg_password | default('password') }}"
+validate_certs: "{{ ogg_validate_certs | default(true) }}"

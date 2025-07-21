@@ -1,0 +1,113 @@
+---
+- name: Deploy GoldenGate Extract, Distribution Path, and Replicat Configuration
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../templates/variables.yml.j2
+  vars:
+    # Load JSON configuration files
+    extracts_config: "{{ lookup('file', '../config/extracts.json') | from_json }}"
+    distpaths_config: "{{ lookup('file', '../config/distpaths.json') | from_json }}"
+    replicats_config: "{{ lookup('file', '../config/replicats.json') | from_json }}"
+    
+    # Environment-specific GoldenGate connection (from GitHub environment variables or defaults)
+    goldengate_url: "{{ lookup('env', 'GOLDENGATE_URL') | default(ogg_url) | default('https://ogg-server:9011') }}"
+    goldengate_username: "{{ lookup('env', 'GOLDENGATE_USERNAME') | default(ogg_username) | default('admin') }}"
+    goldengate_password: "{{ lookup('env', 'GOLDENGATE_PASSWORD') | default(ogg_password) | default('password') }}"
+    validate_certs: "{{ ogg_validate_certs | default(true) }}"
+    target_environment: "{{ target_environment | default('dev') }}"
+
+  tasks:
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "Starting GoldenGate deployment with:"
+          - "  - Environment: {{ target_environment }}"
+          - "  - GoldenGate URL: {{ goldengate_url }}"
+          - "  - {{ extracts_config.extracts | length }} extracts"
+          - "  - {{ distpaths_config.distpaths | length }} distribution paths" 
+          - "  - {{ replicats_config.replicats | length }} replicats"
+
+    # Deploy Extracts
+    - name: Deploy GoldenGate Extracts
+      oracle.goldengate.goldengate_extract:
+        name: "{{ item.name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.name) }}"
+        state: "{{ item.state | default('present') }}"
+        config: "{{ item.config }}"
+        trail_file: "{{ item.trail_file | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.trail_file) }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ extracts_config.extracts }}"
+      loop_control:
+        label: "Extract: {{ item.name }}"
+      register: extract_results
+      tags: ['extract', 'deploy']
+
+    - name: Display extract deployment results
+      debug:
+        msg: "Extract {{ item.item.name }}: {{ 'Created/Updated' if item.changed else 'No changes' }}"
+      loop: "{{ extract_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      tags: ['extract', 'deploy']
+
+    # Deploy Distribution Paths  
+    - name: Deploy GoldenGate Distribution Paths
+      oracle.goldengate.goldengate_distpath:
+        source_name: "{{ item.source_name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.source_name) }}"
+        path_name: "{{ item.path_name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.path_name) }}"
+        state: "{{ item.state | default('present') }}"
+        config: "{{ item.config }}"
+        trail_file: "{{ item.trail_file | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.trail_file) }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ distpaths_config.distpaths }}"
+      loop_control:
+        label: "DistPath: {{ item.source_name }}/{{ item.path_name }}"
+      register: distpath_results
+      tags: ['distpath', 'deploy']
+
+    - name: Display distribution path deployment results
+      debug:
+        msg: "Distribution Path {{ item.item.source_name }}/{{ item.item.path_name }}: {{ 'Created/Updated' if item.changed else 'No changes' }}"
+      loop: "{{ distpath_results.results }}"
+      loop_control:
+        label: "{{ item.item.source_name }}/{{ item.item.path_name }}"
+      tags: ['distpath', 'deploy']
+
+    # Deploy Replicats
+    - name: Deploy GoldenGate Replicats
+      oracle.goldengate.goldengate_replicat:
+        name: "{{ item.name | regex_replace('\\{\\{.*?\\}\\}', '') | trim | default(item.name) }}"
+        state: "{{ item.state | default('present') }}"
+        config: "{{ item.config }}"
+        goldengate_url: "{{ goldengate_url }}"
+        goldengate_username: "{{ goldengate_username }}"
+        goldengate_password: "{{ goldengate_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ replicats_config.replicats }}"
+      loop_control:
+        label: "Replicat: {{ item.name }}"
+      register: replicat_results
+      tags: ['replicat', 'deploy']
+
+    - name: Display replicat deployment results
+      debug:
+        msg: "Replicat {{ item.item.name }}: {{ 'Created/Updated' if item.changed else 'No changes' }}"
+      loop: "{{ replicat_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      tags: ['replicat', 'deploy']
+
+    - name: Deployment Summary
+      debug:
+        msg:
+          - "GoldenGate deployment completed successfully!"
+          - "Extracts processed: {{ extract_results.results | length }}"
+          - "Distribution paths processed: {{ distpath_results.results | length }}"
+          - "Replicats processed: {{ replicat_results.results | length }}"
+      tags: ['summary']

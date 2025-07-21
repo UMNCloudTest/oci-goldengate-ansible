@@ -1,0 +1,44 @@
+# Development Environment Inventory
+all:
+  vars:
+    # Environment identifier
+    target_environment: dev
+    
+    # GoldenGate Server Configuration (will be overridden by GitHub environment variables)
+    ogg_url: "https://dev-ogg-server:9011"
+    ogg_username: "admin"
+    ogg_password: "dev-password"
+    ogg_validate_certs: false
+    
+    # Source Database Configuration
+    source_host: "dev-source-db.example.com"
+    source_port: 1521
+    source_service: "DEVORCL"
+    source_alias: "DEVSOURCEDB"
+    
+    source_host_2: "dev-source-db2.example.com"
+    source_port_2: 1521
+    source_service_2: "DEVORCL2"
+    source_alias_2: "DEVSOURCEDB2"
+    
+    # Target GoldenGate Servers
+    target_ogg_server: "dev-remote-ogg.example.com"
+    target_ogg_server_port: 9021
+    
+    target_ogg_server_2: "dev-remote-ogg2.example.com"
+    target_ogg_server_port_2: 9021
+    
+    # Target Database Configuration
+    target_host: "dev-target-db.example.com"
+    target_port: 1521
+    target_service: "DEVTGTDB"
+    target_alias: "DEVTARGETDB"
+    
+    target_host_2: "dev-target-db2.example.com"
+    target_port_2: 1521
+    target_service_2: "DEVTGTDB2"
+    target_alias_2: "DEVTARGETDB2"
+
+  hosts:
+    localhost:
+      ansible_connection: local

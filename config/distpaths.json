@@ -1,0 +1,32 @@
+{
+  "distpaths": [
+    {
+      "source_name": "{{ extract_name_prefix }}SRC1",
+      "path_name": "{{ distpath_name_prefix }}PATH1",
+      "state": "started",
+      "config": {
+        "target": {
+          "host": "{{ target_ogg_host }}",
+          "port": "{{ target_ogg_port | default(9021) }}",
+          "trail": "./dirdat/{{ remote_trail_prefix }}"
+        },
+        "description": "Distribution path for {{ extract_name_prefix }}SRC1 to {{ target_ogg_host }}"
+      },
+      "trail_file": "{{ remote_trail_prefix }}"
+    },
+    {
+      "source_name": "{{ extract_name_prefix }}SRC2",
+      "path_name": "{{ distpath_name_prefix }}PATH2", 
+      "state": "started",
+      "config": {
+        "target": {
+          "host": "{{ target_ogg_host_2 }}",
+          "port": "{{ target_ogg_port_2 | default(9021) }}",
+          "trail": "./dirdat/{{ remote_trail_prefix_2 }}"
+        },
+        "description": "Distribution path for {{ extract_name_prefix }}SRC2 to {{ target_ogg_host_2 }}"
+      },
+      "trail_file": "{{ remote_trail_prefix_2 }}"
+    }
+  ]
+}

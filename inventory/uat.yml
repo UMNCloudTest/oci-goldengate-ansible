@@ -1,0 +1,44 @@
+# UAT Environment Inventory
+all:
+  vars:
+    # Environment identifier
+    target_environment: uat
+    
+    # GoldenGate Server Configuration (will be overridden by GitHub environment variables)
+    ogg_url: "https://uat-ogg-server:9011"
+    ogg_username: "admin"
+    ogg_password: "uat-password"
+    ogg_validate_certs: true
+    
+    # Source Database Configuration
+    source_host: "uat-source-db.example.com"
+    source_port: 1521
+    source_service: "UATORCL"
+    source_alias: "UATSOURCEDB"
+    
+    source_host_2: "uat-source-db2.example.com"
+    source_port_2: 1521
+    source_service_2: "UATORCL2"
+    source_alias_2: "UATSOURCEDB2"
+    
+    # Target GoldenGate Servers
+    target_ogg_server: "uat-remote-ogg.example.com"
+    target_ogg_server_port: 9021
+    
+    target_ogg_server_2: "uat-remote-ogg2.example.com"
+    target_ogg_server_port_2: 9021
+    
+    # Target Database Configuration
+    target_host: "uat-target-db.example.com"
+    target_port: 1521
+    target_service: "UATTGTDB"
+    target_alias: "UATTARGETDB"
+    
+    target_host_2: "uat-target-db2.example.com"
+    target_port_2: 1521
+    target_service_2: "UATTGTDB2"
+    target_alias_2: "UATTARGETDB2"
+
+  hosts:
+    localhost:
+      ansible_connection: local
